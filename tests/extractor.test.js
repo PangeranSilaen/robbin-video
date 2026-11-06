@@ -1,7 +1,8 @@
 'use strict';
 const test = require('node:test');
+const zlib = require('node:zlib');
 const assert = require('node:assert/strict');
-const { isPublicIPv4, parseWebUrl, makePinnedLookup, mediaTypeFromContentType } = require('../lib/net');
+const { isPublicIPv4, parseWebUrl, makePinnedLookup, mediaTypeFromContentType, decodeHtmlBody } = require('../lib/net');
 const { findCandidates, findPlayerIframes, findPlayerPages, extract } = require('../lib/extractor');
 
 test('block private and reserved address ranges', () => {
@@ -93,4 +94,25 @@ test('only promote dynamic PHP response to playable media when its MIME is video
   assert.equal(result.candidates.length, 1);
   assert.equal(result.candidates[0].url, link);
   assert.equal(result.candidates[0].confidence, 'high');
+});
+
+
+test('decode Brotli HTML carrying a dynamically assigned player URL', () => {
+  const html = '<link rel="prefetch" href="https://cdn.example.org/stream.php?id=test">' +
+    '<script>const playerPath = "https://cdn.example.org/stream.php?id=test";</script>';
+  const compressed = zlib.brotliCompressSync(Buffer.from(html));
+  assert.equal(decodeHtmlBody([compressed], 'br'), html);
+  assert.deepEqual(findPlayerPages(decodeHtmlBody([compressed], 'br'), 'https://cdn.example.org/watch'), ['https://cdn.example.org/stream.php?id=test']);
+});
+
+test('decode gzip and deflate HTML and reject unknown content encoding', () => {
+  const html = '<title>Source test</title>';
+  assert.equal(decodeHtmlBody([zlib.gzipSync(html)], 'gzip'), html);
+  assert.equal(decodeHtmlBody([zlib.deflateSync(html)], 'deflate'), html);
+  assert.throws(() => decodeHtmlBody([Buffer.from(html)], 'zstd'));
+});
+
+test('decompression has output size limit to reject oversized HTML', () => {
+  const oversized = zlib.brotliCompressSync(Buffer.alloc(1_500_001, 65));
+  assert.throws(() => decodeHtmlBody([oversized], 'br'));
 });
