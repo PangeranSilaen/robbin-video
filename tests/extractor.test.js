@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { isPublicIPv4, parseWebUrl } = require('../lib/net');
+const { isPublicIPv4, parseWebUrl, makePinnedLookup } = require('../lib/net');
 const { findCandidates, findPlayerIframes, extract } = require('../lib/extractor');
 
 test('block private and reserved address ranges', () => {
@@ -36,4 +36,13 @@ test('direct stream does not need network request', async () => {
   const result = await extract('https://media.example.org/clip.mp4');
   assert.equal(result.candidates.length, 1);
   assert.equal(result.candidates[0].confidence, 'high');
+});
+
+test('pinned DNS lookup supports all-record and single-record callback modes', () => {
+  const lookup = makePinnedLookup('8.8.8.8');
+  let result;
+  lookup('example.org', { all: true }, (...args) => { result = args; });
+  assert.deepEqual(result, [null, [{ address: '8.8.8.8', family: 4 }]]);
+  lookup('example.org', { all: false }, (...args) => { result = args; });
+  assert.deepEqual(result, [null, '8.8.8.8', 4]);
 });
