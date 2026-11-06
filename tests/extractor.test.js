@@ -1,8 +1,8 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { isPublicIPv4, parseWebUrl, makePinnedLookup } = require('../lib/net');
-const { findCandidates, findPlayerIframes, extract } = require('../lib/extractor');
+const { isPublicIPv4, parseWebUrl, makePinnedLookup, mediaTypeFromContentType } = require('../lib/net');
+const { findCandidates, findPlayerIframes, findPlayerPages, extract } = require('../lib/extractor');
 
 test('block private and reserved address ranges', () => {
   for (const ip of ['127.0.0.1', '10.3.5.7', '169.254.169.254', '192.168.1.1', '172.16.0.10', '100.64.0.1', '203.0.113.1', '0.0.0.0']) assert.equal(isPublicIPv4(ip), false, ip);
@@ -45,4 +45,52 @@ test('pinned DNS lookup supports all-record and single-record callback modes', (
   assert.deepEqual(result, [null, [{ address: '8.8.8.8', family: 4 }]]);
   lookup('example.org', { all: false }, (...args) => { result = args; });
   assert.deepEqual(result, [null, '8.8.8.8', 4]);
+});
+
+
+test('find JS-built player iframe and prefetch, without revealing any real tokens', () => {
+  const html = '<link rel="prefetch" href="https://media.example.org/stream.php?bucket=video&amp;id=sample">' +
+    '<script>const playerPath = "https://media.example.org/stream.php?bucket=video\\u0026id=sample";</script>' +
+    '<script>fetch("https://tracker.example.org/aclck");</script>';
+  assert.deepEqual(findPlayerPages(html, 'https://media.example.org/watch/1'), ['https://media.example.org/stream.php?bucket=video&id=sample']);
+});
+
+test('do not fetch obvious advertising or private iframe destinations', () => {
+  const html = '<iframe src="https://ads.example.org/adserver/player"></iframe>' +
+    '<script>const playerPath = "http://127.0.0.1/private";</script>';
+  assert.deepEqual(findPlayerPages(html, 'https://example.org/watch'), []);
+});
+
+test('recognize only well-defined media MIME types', () => {
+  assert.equal(mediaTypeFromContentType('video/mp4; charset=binary'), 'video');
+  assert.equal(mediaTypeFromContentType('application/vnd.apple.mpegurl'), 'hls');
+  assert.equal(mediaTypeFromContentType('application/dash+xml'), 'dash');
+  assert.equal(mediaTypeFromContentType('text/html; charset=utf-8'), null);
+  assert.equal(mediaTypeFromContentType('application/octet-stream'), null);
+});
+
+test('follow dynamically declared player and classify an HTML media link', async () => {
+  const calls = [];
+  const root = 'https://videos.example.org/watch/example';
+  const next = 'https://videos.example.org/stream.php?id=sample';
+  const result = await extract(root, { fetchPage: async (url) => {
+    calls.push(url);
+    if (url === root) return { finalUrl: root, html: '<title>Example video</title><script>const playerPath = "' + next + '";</script>' };
+    if (url === next) return { finalUrl: next, html: '<video src="https://cdn.example.org/film.mp4"></video>' };
+    throw new Error('Unexpected request');
+  } });
+  assert.deepEqual(calls, [root, next]);
+  assert.equal(result.candidates[0].url, 'https://cdn.example.org/film.mp4');
+  assert.equal(result.warnings.length, 0);
+});
+
+test('only promote dynamic PHP response to playable media when its MIME is video', async () => {
+  const root = 'https://media.example.org/watch/abc';
+  const link = 'https://media.example.org/stream.php?token=fake';
+  const result = await extract(root, { fetchPage: async (url) => url === root
+    ? { finalUrl: root, html: '<script>const playerPath="' + link + '";</script>' }
+    : { finalUrl: link, html: '', mediaKind: 'video' } });
+  assert.equal(result.candidates.length, 1);
+  assert.equal(result.candidates[0].url, link);
+  assert.equal(result.candidates[0].confidence, 'high');
 });
