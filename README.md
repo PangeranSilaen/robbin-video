@@ -19,11 +19,11 @@ npm test
 npx vercel dev
 ```
 
-`npm test` tidak membutuhkan instalasi dependency.
+`npm test` tidak membutuhkan instalasi dependency. Vercel menjalankan tes ini sebagai build command sebelum publikasi, menggunakan Node.js 22.
 
 ## Keterbatasan penting
 
-- **Bukan universal extractor 100%.** Backend hanya mengambil HTML/metadata statis dan hingga dua iframe player yang relevan, tanpa menjalankan JavaScript. Video yang muncul hanya setelah browser menjalankan script, memerlukan login, signed headers, anti-bot, atau DRM tidak selalu ditemukan.
+- **Bukan universal extractor 100%.** Backend hanya mengambil HTML/metadata statis dan hingga tiga halaman player relevan (termasuk URL iframe yang dirakit JavaScript), tanpa menjalankan JavaScript situs. Video yang muncul hanya setelah browser menjalankan script, memerlukan login, signed headers, anti-bot, atau DRM tidak selalu ditemukan.
 - Pemutar native iPhone Safari mendukung MP4 dan HLS (.m3u8). Browser desktop bisa punya dukungan format berbeda. DASH (.mpd) saat ini hanya ditemukan sebagai kandidat, belum bisa diputar native.
 - Backend **tidak mem-proxy video**, jadi server media tetap dapat menolak hotlink, referer, CORS, geoblocking, atau token kedaluwarsa.
 - Kandidat dinilai berdasarkan markup dan metadata, lalu filter pola iklan yang jelas. Ini **bukan jaminan** video tersebut bukan iklan. Untuk mencegah salah putar, tidak ada autoplay, dan pengguna memilih kandidat sendiri.
@@ -36,3 +36,6 @@ npx vercel dev
 - DNS IPv4 di-resolve sebelum request, IP private/reserved ditolak, alamat terpilih dipin untuk koneksi TCP dan setiap redirect diperiksa ulang. IPv6 langsung belum didukung demi default fail-closed.
 - Maksimal 3 redirect, 9 detik per request, HTML <= 1.5 MB, iframe eksternal maksimal 2. Tidak ada cookies, header Authorization, atau halaman asal yang dieksekusi.
 - Response `no-store`, player memakai referrer policy `no-referrer`, dan HTML merender data melalui `textContent`, bukan `innerHTML`.
+## Player dengan alamat dinamis
+
+Extractor mendeteksi petunjuk seperti `playerPath` pada JavaScript inline dan `<link rel="prefetch">` ke player, lalu memeriksa respons HTML atau MIME media dengan batas tiga halaman dan dua tingkat. Ini bukan eksekusi JavaScript atau bypass akses. Endpoint `stream.php` hanyalah halaman/player sampai responsnya benar-benar menunjukkan media. URL bertoken dapat kedaluwarsa dan pemutaran langsung masih bisa ditolak oleh server sumber.
