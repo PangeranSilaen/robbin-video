@@ -1,0 +1,12 @@
+{
+  "name": "robbin-video",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vanilla HTML/CSS/JS video extractor with lightweight Vercel API",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

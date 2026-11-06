@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#0c0e16">
+  <meta name="description" content="Cari sumber video dan putar tanpa membuka halaman iklan atau popup situs asal.">
+  <title>Robbin Video | Video saja, tanpa gangguan</title>
+  <link rel="stylesheet" href="/style.css">
+  <script defer src="/app.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="header">
+      <a class="brand" href="/" aria-label="Robbin Video beranda">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path d="m8 5 11 7-11 7z" fill="currentColor"/></svg></span>
+        <span>robbin<span class="brand-light">video</span></span>
+      </a>
+      <span class="header-tag"><span class="live-dot"></span> NO ADS IN PLAYER</span>
+    </header>
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="eyebrow"><span class="eyebrow-dot"></span> YOUR PERSONAL VIDEO SPACE</div>
+        <h1 id="hero-title">Videonya saja.<br><span>Tanpa gangguan.</span></h1>
+        <p class="hero-sub">Tempel tautan video atau halaman web. Robbin akan mencoba menemukan media aslinya tanpa memuat popup, overlay, dan script iklan situs sumber.</p>
+        <form id="extract-form" class="url-form">
+          <label for="url-input" class="sr-only">Tautan video atau halaman</label>
+          <div class="input-wrap">
+            <span class="link-icon" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.1 0l3-3a5 5 0 0 0-7.1-7.1l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3a5 5 0 0 0 7.1 7.1l1.7-1.7"/></svg></span>
+            <input id="url-input" type="url" inputmode="url" autocomplete="off" spellcheck="false" required placeholder="https://contoh.com/watch/123" aria-describedby="url-hint">
+            <button class="extract-button" id="submit-button" type="submit"><span id="submit-label">Cari video</span><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 14 0m-6-6 6 6-6 6"/></svg></button>
+          </div>
+        </form>
+        <div class="form-footer" id="url-hint">
+          <span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 22 8-4V6l-8-4-8 4v12l8 4Z"/><path d="m9 12 2 2 4-4"/></svg> Tidak menjalankan JavaScript situs sumber</span>
+          <button type="button" class="example-button" id="sample-button">Coba video contoh <span aria-hidden="true">&rarr;</span></button>
+        </div>
+      </section>
+      <section id="feedback" class="feedback hidden" role="status" aria-live="polite"></section>
+      <section id="results" class="results hidden" aria-live="polite">
+        <div class="section-title"><div><span class="section-kicker">EXTRACTION RESULT</span><h2 id="result-title">Hasil pencarian</h2><p id="result-source"></p></div><span id="result-count" class="count"></span></div>
+        <div id="warnings" class="warnings hidden"></div>
+        <div id="candidate-list" class="candidate-list"></div>
+      </section>
+      <section id="player-section" class="player-section hidden" aria-labelledby="player-heading">
+        <div class="section-title"><div><span class="section-kicker">CLEAN PLAYBACK</span><h2 id="player-heading">Sekarang diputar</h2></div><span class="safe-badge"><span class="live-dot"></span> PLAYER ONLY</span></div>
+        <div class="video-frame"><video id="video-player" playsinline controls preload="metadata" referrerpolicy="no-referrer" aria-label="Pemutar video"></video><div class="video-placeholder" id="video-placeholder">Pilih kandidat media untuk mulai memutar.</div></div>
+        <div class="player-bottom"><p id="player-description">Video diputar langsung dari server sumber, bukan melalui proxy Robbin.</p><button id="copy-link" type="button" class="copy-button">Salin URL media</button></div>
+      </section>
+      <section class="how" aria-label="Cara kerja">
+        <div class="how-item"><span class="step-number">01</span><div><strong>Tempel URL</strong><p>Bisa halaman web atau tautan MP4 / M3U8 langsung.</p></div></div>
+        <div class="how-item"><span class="step-number">02</span><div><strong>Cari media</strong><p>Analisis metadata dan sumber video, lalu singkirkan kandidat iklan yang jelas.</p></div></div>
+        <div class="how-item"><span class="step-number">03</span><div><strong>Pilih &amp; tonton</strong><p>Konfirmasi kandidat yang benar. Tidak ada autoplay sembarangan.</p></div></div>
+      </section>
+    </main>
+    <footer class="footer"><span>robbinvideo <span class="dot-sep">/</span> made for distraction-free watching</span><span>Tanpa akun. Tanpa database. Tanpa iframe situs asal.</span></footer>
+  </div>
+</body>
+</html>

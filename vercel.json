@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "framework": null,
+  "functions": {
+    "api/extract.js": {
+      "maxDuration": 20
+    }
+  }
+}
