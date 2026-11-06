@@ -116,3 +116,41 @@ test('decompression has output size limit to reject oversized HTML', () => {
   const oversized = zlib.brotliCompressSync(Buffer.alloc(1_500_001, 65));
   assert.throws(() => decodeHtmlBody([oversized], 'br'));
 });
+
+
+test('detect signed extensionless video src in embedded HTML', () => {
+  const html = '<video controls src="https://mp4-09.example.org/s/demo/1794000000/a/signed-id"></video>';
+  const result = findCandidates(html, 'https://player.example.org/stream.php');
+  assert.equal(result.length, 1);
+  assert.equal(result[0].kind, 'video');
+  assert.equal(result[0].confidence, 95);
+});
+
+test('detect extensionless nested source without mistaking picture source for video', () => {
+  const html = '<picture><source srcset="https://images.example.org/render?id=1" type="image/webp"></picture>' +
+    '<video controls><source src="https://mp4.example.org/s/signed-token" type="video/mp4"></video>';
+  const result = findCandidates(html, 'https://player.example.org/stream.php');
+  assert.deepEqual(result.map(r => r.url), ['https://mp4.example.org/s/signed-token']);
+});
+
+test('ignore extensionless video candidates carrying obvious ad patterns', () => {
+  const html = '<video src="https://cdn.example.org/ads/preroll?token=abc"></video>' +
+    '<video src="https://cdn.example.org/stream/signed-video"></video>';
+  const result = findCandidates(html, 'https://player.example.org');
+  assert.equal(result.length, 1);
+  assert.equal(result[0].url, 'https://cdn.example.org/stream/signed-video');
+});
+
+test('follow embedded HTML and find extensionless media URL', async () => {
+  const root = 'https://videos.example.org/watch/id';
+  const player = 'https://videos.example.org/stream.php?id=test';
+  const src = 'https://cdn.example.org/s/tokenized-content';
+  const out = await extract(root, { fetchPage: async (url) => {
+    if (url === root) return { finalUrl: root, html: '<script>const playerPath = "' + player + '";</script>' };
+    if (url === player) return { finalUrl: player, html: '<video><source src="' + src + '" type="video/mp4"></video>' };
+    throw new Error('unexpected');
+  } });
+  assert.equal(out.candidates.length, 1);
+  assert.equal(out.candidates[0].url, src);
+  assert.equal(out.candidates[0].kind, 'video');
+});
